@@ -1,3 +1,11 @@
+#data files
+*.tif
+*.xlsx
+*.csv
+
+#pdfs
+*.pdf
+
 # History files
 .Rhistory
 .Rapp.history
