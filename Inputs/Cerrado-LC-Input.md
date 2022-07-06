@@ -9,6 +9,10 @@ library(terra)
 
     ## terra 1.5.34
 
+``` r
+library(readxl)
+```
+
 This document presents a record of analysis to create land cover inputs
 to an application of CRAFTY to Cerrado biome in four states (GO, MT, MS,
 MG).
@@ -20,8 +24,15 @@ from 30m to 1000m in the run dialogue. Outputs had naming convention
 *mapbiomas-brazil-collection-60-cerrado-YYYY-1km.tif* where *YYYY* is
 four digit year.
 
-Combine these raster files into a single multi-layer raster and set `0`
-values to `No Data`
+Because we can download mapbiomas data at our desired resolution
+(whereas previously only 30m was available), we will take a different
+approach to develop the input region file for CRAFTY [than used for
+CRAFTY Brazil](https://github.com/jamesdamillington/BrazilInputMaps).
+Rather than creating the BaseRaster first from a rasterised vector,
+we’ll use the mapbiomas raster as a base and work from there.
+
+So, first. combine the mapbiomas raster files into a single multi-layer
+raster and set `0` values to `No Data`
 
 ``` r
 r <- rast("data/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
@@ -38,7 +49,7 @@ r
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.47944, -41.27346, -24.68777, -2.328703  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_rKKGaDknClZW3hp_68787.tif 
+    ## source      : spat_Yza4IxtN2yOkXLT_33626.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -210,3 +221,14 @@ plot(new)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Now reclassify (no need for disaggregation as before, because collection
+6 include classes for soybeans etc)
+
+``` r
+classification <- read_excel(paste0("data/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
+map <- classify(new, rcl=as.matrix(classification))                 #classify
+plot(map)
+```
+
+![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
