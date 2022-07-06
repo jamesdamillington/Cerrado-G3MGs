@@ -17,7 +17,9 @@ This document presents a record of analysis to create land cover inputs to an ap
 
 [MapBiomas](https://mapbiomas.org/en) Collection 6 Land Cover raster (.tif) files were downloaded for 2001-2020 for the Cerrado biome via the Toolkits in Google Earth Engine. Spatial resolution was changed from from 30m to 1000m in the run dialogue. Outputs had naming convention _mapbiomas-brazil-collection-60-cerrado-YYYY-1km.tif_ where _YYYY_ is four digit year. 
 
-Combine these raster files into a single multi-layer raster and set `0` values to `No Data`
+Because we can download mapbiomas data at our desired resolution (whereas previously only 30m was available), we will take a different approach to develop the input region file for CRAFTY [than used for CRAFTY Brazil](https://github.com/jamesdamillington/BrazilInputMaps). Rather than creating the BaseRaster first from a rasterised vector, we'll use the mapbiomas raster as a base and work from there. 
+
+So, first. combine the mapbiomas raster files into a single multi-layer raster and set `0` values to `No Data`
 ```{r}
 r <- rast("data/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
 for(i in 2002:2020){
@@ -92,3 +94,7 @@ new <- rast("data/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
 new
 plot(new)
 ```
+
+Now reclassify (no need for disaggregation as before, because collection 6 include classes for soybeans etc)
+
+
