@@ -2,6 +2,7 @@
 *.tif
 *.xlsx
 *.csv
+Inputs/data/vector/
 
 #pdfs
 *.pdf
