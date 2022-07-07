@@ -49,7 +49,7 @@ r
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.47944, -41.27346, -24.68777, -2.328703  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_YDwoRatykQ6n51D_23166.tif 
+    ## source      : spat_vPbkbSruUSvo5pI_28512.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -66,14 +66,14 @@ states of interest.
 We do this using municiaplity and state boundary vector (.shp) data
 
 ``` r
-munis <- vect("data/vector/BRadmin.shp")
-plot(munis)
+BRadmin <- vect("data/vector/BRadmin.shp")
+plot(BRadmin)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
-head(munis)
+head(BRadmin)
 ```
 
     ##                   NM_MUNICIP CD_GEOCMU CD_GEOCMUn State NM_ESTADO NM_REGIAO
@@ -103,14 +103,14 @@ shapefile containing only the four states we want.
 sids <- c(50, 51, 52, 31)
 
 #subset
-G3MGs <- munis[munis$State %in% sids,]
-plot(G3MGs)
+G3MGsadmin <- BRadmin[BRadmin$State %in% sids,]
+plot(G3MGsadmin)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
-head(G3MGs)
+head(G3MGsadmin)
 ```
 
     ##     NM_MUNICIP CD_GEOCMU CD_GEOCMUn State          NM_ESTADO    NM_REGIAO
@@ -129,20 +129,16 @@ head(G3MGs)
     ## 6        50
 
 ``` r
-#fix GOIAS name
-#G3MGs[1,'name'] <- "GOIAS"
-#head(G3MGs)
-
 #write to file
-outfile <- "data/vector/G3MGs.shp"
-writeVector(G3MGs, outfile, overwrite=TRUE)
+outfile <- "data/vector/G3MGsadmin.shp"
+writeVector(G3MGsadmin, outfile, overwrite=TRUE)
 ```
 
 Read in our subset shapefile and re-project to the CRS of our raster
 data ready for clipping.
 
 ``` r
-s4<- vect("data/vector/G3MGs.shp")
+s4<- vect("data/vector/G3MGsadmin.shp")
 crsr <- crs(r)
 s4 <- terra::project(s4, crsr)
 ```
@@ -171,7 +167,7 @@ rs4
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.09316, -41.65973, -24.00505, -9.829635  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_19sMmjisJrq2lgs_23166.tif 
+    ## source      : spat_5Fbacfq6vDLBaXX_28512.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -222,3 +218,45 @@ plot(map)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+Create raster maps of states and municipalities (for region.csv)
+
+dimensions : 1578, 2052, 20 (nrow, ncol, nlyr) resolution : 0.008983153,
+0.008983153 (x, y) extent : -60.09316, -41.65973, -24.00505, -9.829635
+(xmin, xmax, ymin, ymax) coord. ref. : lon/lat WGS 84 (EPSG:4326)
+
+``` r
+G3MGsadmin_latlon <- rast(
+  nrows=nrow(new),
+  ncols=ncol(new),
+  nlyrs=1,
+  xmin=xmin(new),
+  xmax=xmax(new),
+  ymin=ymin(new),
+  ymax=ymax(new),
+  crs=crs(new),
+  resolution=res(new),
+  vals=NA
+)
+
+G3MGsmunis_r_latlon <- rasterize(x=s4, y=G3MGsadmin_latlon, field = "CD_GEOCMUn")
+G3MGsstates_r_latlon <- rasterize(x=s4, y=G3MGsadmin_latlon, field = "State")
+
+G3MGsmunis_r_latlon <- mask(G3MGsmunis_r_latlon, new[[1]])
+G3MGsstates_r_latlon <- mask(G3MGsstates_r_latlon, new[[1]])
+
+plot(G3MGsmunis_r_latlon)
+```
+
+![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+plot(G3MGsstates_r_latlon)
+```
+
+![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
+
+``` r
+writeRaster(G3MGsmunis_r_latlon, "data/mapbiomas6/G3MGsmunis_r_latlon.tif", overwrite=TRUE)
+writeRaster(G3MGsstates_r_latlon, "data/mapbiomas6/G3MGsstates_r_latlon.tif", overwrite=TRUE)
+```
