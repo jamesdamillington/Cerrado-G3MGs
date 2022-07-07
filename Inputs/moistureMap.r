@@ -5,22 +5,18 @@
 #versioning tracked in https://github.com/jamesdamillington/Cerrado-G3MGs from 2022-07-07
 #main edits are to: 1. use different study area (extent, resolution) and 2. change raster -> terra package
 
-rm(list = ls())
-library(raster)
+library(terra)
 library(tidyverse)
 library(ncdf4)
+library(raster)
 
 
-#read munis.r as latlong
-#unzip(zipfile="Data/sim10_BRmunis_latlon_5km.zip",exdir="Data")  #unzip
-munis.r <- raster("Data/sim10_BRmunis_latlon_5km.asc")
-latlong <- "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs "
-crs(munis.r) <- latlong
+munis.r <- rast('data/raster/socecon/G3MGsmunis_r_latlon.tif') #from Cerrado-LC-Input.Rmd
 
 #soil is used to calculate plant available water
 #read soil texture and set bucket size (see email from Daniel Victoria 2017-11-21)
 #unzip(zipfile="Data/soilT_2018-05-01.zip",exdir="Data")  #unzip
-soil<-raster("Data/soilT_2018-05-01.asc")  
+soil<-rast("data/raster/physical/soilT_2018-05-01.asc")  
 
 #PAW is Plant Available Water
 PAW<-soil
@@ -54,17 +50,21 @@ nc2raster <- function(ncyear, ncvar)
   dx <- diff(lon[1:2])
   dy <- diff(lat[1:2])
   
+  ext_lon <- c(lon[1]-dx/2, lon[M]+dx/2, lat[1]-dy/2, lat[N]+dy/2)
+  
   tr <- y_fromYear(ncyear)
   startmonth <- (tr * 12) - 11
   
-  s1 <- raster(t(pre_array[,,startmonth][,N:1]), xmn=lon[1]-dx/2, xmx=lon[M]+dx/2, ymn=lat[1]-dy/2, ymx=lat[N]+dy/2, crs=CRS("+init=epsg:4326"))
+  #s1 <- rast(t(pre_array[,,startmonth][,N:1]), xmin=lon[1]-dx/2, xmax=lon[M]+dx/2, ymin=lat[1]-dy/2, ymax=lat[N]+dy/2, crs=CRS("EPSG4326"))
+  s1 <- rast(t(pre_array[,,startmonth][,N:1]), extent=ext_lon, crs="EPSG:4326")
   
   startmonth <- startmonth + 1
   endmonth <- startmonth + 10 
   
   for(mon in startmonth:endmonth)
   {
-    s1 <- stack(s1, raster(t(pre_array[,,mon][,N:1]), xmn=lon[1]-dx/2, xmx=lon[M]+dx/2, ymn=lat[1]-dy/2, ymx=lat[N]+dy/2, crs=CRS("+init=epsg:4326")))
+   #s1 <- c(s1, rast(t(pre_array[,,mon][,N:1]), xmin=lon[1]-dx/2, xmax=lon[M]+dx/2, ymin=lat[1]-dy/2, ymax=lat[N]+dy/2, crs=CRS("EPSG4326")))
+   s1 <- c(s1, rast(t(pre_array[,,mon][,N:1]), extent=ext_lon, crs="EPSG:4326"))
   }
   
   names(s1) <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
@@ -107,6 +107,8 @@ nc2rasterSH <- function(ncyear, ncvar)
   dxB <- diff(lonB[1:2])
   dyB <- diff(latB[1:2])
   
+  ext_lonB <- c(lonB[1]-dxB/2, lonB[MB]+dxB/2, latB[1]-dyB/2, latB[NB]+dyB/2)
+  
   #need to split the remaining stacking into two loops, one for yrB, one for yrA
   #startmonth becomes July of yrA
   #endmonth of yrA is December 
@@ -123,14 +125,18 @@ nc2rasterSH <- function(ncyear, ncvar)
     
     startmonth <- (tr * 12) - 17  
     
-    s1 <- raster(t(pre_arrayB[,,startmonth][,NB:1]), xmn=lonB[1]-dxB/2, xmx=lonB[MB]+dxB/2, ymn=latB[1]-dyB/2, ymx=latB[NB]+dyB/2, crs=CRS("+init=epsg:4326"))
+    #s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326")
+    s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), extent=ext_lonB, crs="EPSG:4326")
+    #s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), crs="EPSG:4326")
     
     startmonth <- startmonth + 1
     endmonth <- startmonth + 10 
     
     for(mon in startmonth:endmonth)
     {
-      s1 <- stack(s1, raster(t(pre_arrayB[,,mon][,NB:1]), xmn=lonB[1]-dxB/2, xmx=lonB[MB]+dxB/2, ymn=latB[1]-dyB/2, ymx=latB[NB]+dyB/2, crs=CRS("+init=epsg:4326")))
+      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326"))
+      s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), extent=ext_lonB, crs="EPSG:4326"))
+      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), crs="EPSG:4326"))
     }
   }
   
@@ -151,18 +157,24 @@ nc2rasterSH <- function(ncyear, ncvar)
     dxA <- diff(lonA[1:2])
     dyA <- diff(latA[1:2])
     
+    ext_lonA <- c(lonA[1]-dxA/2, lonA[MA]+dxA/2, latA[1]-dyA/2, latA[N.A]+dyA/2)
+    
     #from earliest nc file get last 6 months
     trA <- y_fromYear(ncyear-1)
     startmonthA <- (trA * 12) - 5 
     
-    s1 <- raster(t(pre_arrayA[,,startmonthA][,N.A:1]), xmn=lonA[1]-dxA/2, xmx=lonA[MA]+dxA/2, ymn=latA[1]-dyA/2, ymx=latA[N.A]+dyA/2, crs=CRS("+init=epsg:4326"))
+    #s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), xmin=lonA[1]-dxA/2, xmax=lonA[MA]+dxA/2, ymin=latA[1]-dyA/2, ymax=latA[N.A]+dyA/2, crs="EPSG:4326")
+    s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), extent=ext_lonA, crs="EPSG:4326")
+    #s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), crs="EPSG:4326")
     
     startmonthA <- startmonthA + 1
     endmonthA <- startmonthA + 4 
     
     for(mon in startmonthA:endmonthA)
     {
-      s1 <- stack(s1, raster(t(pre_arrayA[,,mon][,N.A:1]), xmn=lonA[1]-dxA/2, xmx=lonA[MA]+dxA/2, ymn=latA[1]-dyA/2, ymx=latA[N.A]+dyA/2, crs=CRS("+init=epsg:4326")))
+      #s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), xmin=lonA[1]-dxA/2, xmax=lonA[MA]+dxA/2, ymin=latA[1]-dyA/2, ymax=latA[N.A]+dyA/2, crs="EPSG:4326"))
+      s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), extent=ext_lonA, crs="EPSG:4326"))
+      #s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), crs="EPSG:4326"))
     }
     
     #from later nc file get first 6 months
@@ -171,7 +183,9 @@ nc2rasterSH <- function(ncyear, ncvar)
     
     for(mon in startmonth:endmonth)
     {
-      s1 <- stack(s1, raster(t(pre_arrayB[,,mon][,NB:1]), xmn=lonB[1]-dxB/2, xmx=lonB[MB]+dxB/2, ymn=latB[1]-dyB/2, ymx=latB[NB]+dyB/2, crs=CRS("+init=epsg:4326")))
+      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326"))
+      s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), extent=ext_lonB, crs="EPSG:4326"))
+      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), crs="EPSG:4326"))
     }
     
   }
@@ -195,17 +209,28 @@ y_fromYear <- function(year)
 #function to set climate file name (for use in nc2raster) from a year integer and variable (pre, tmn, tmx)
 fn_fromYearVar <- function(year, var)
 {
-  yr = "Data/cruts/cru_ts4.03.1991.2000."
-  if(year > 2000 & year <= 2010) { yr = "Data/cruts/cru_ts4.03.2001.2010."}
-  if(year > 2010 & year <= 2018) { yr = "Data/cruts/cru_ts4.03.2011.2018."}
+  yr = "data/raster/physical/cru_ts4.03.1991.2000."
+  if(year > 2000 & year <= 2010) { yr = "data/raster/physical/cru_ts4.03.2001.2010."}
+  if(year > 2010 & year <= 2018) { yr = "data/raster/physical/cru_ts4.03.2011.2018."}
   
   return(paste0(yr,var,".dat.nc"))
 }
 
 
 #extent object to use in pdf map plots
-BRA.ext <- extent(-62.39713, -35.43949, -33.89756, -4.06125)
+G3MGs.ext <- ext(-63, -40, -23, -9)
 
+
+#create climate raster with same origin, resolution, extent, crs of target raster 
+alignRast <- function(input, target, outer)
+{
+  print(paste0("Align rasters"))
+  i.crop2 <- crop(input, ext(target)+rep(outer,4)) #initially crop to larger extent than target (i.e. buffer)
+  i.rs <- resample(i.crop2, target)
+  i.crop <- crop(i.rs, ext(target))
+  i.mask <- mask(i.crop, target)
+  return(i.mask)
+}
 
 calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
 {
@@ -240,7 +265,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
     tmx <- nc2raster(ncyear=year,ncvar="tmx")
   }
   
-  #souther hemisphere
+  #southern hemisphere
   if(hemi == "S") {
     pre <- nc2rasterSH(ncyear=year,ncvar="pre")
     tmn <- nc2rasterSH(ncyear=year,ncvar="tmn")
@@ -252,14 +277,17 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
   #dev.off()
   
   #project and crop bricks to extent we want for Brazil
-  pre.b <- projectRaster(pre, munis.r)
-  pre.b <- mask(x=pre.b, mask=munis.r)
+  #pre.b <- terra::project(pre, crs(munis.r))
+  #pre.b <- mask(pre.b, munis.r)
+  pre.b <- alignRast(pre, munis.r, 2)
   
-  tmn.b <- projectRaster(tmn, munis.r)
-  tmn.b <- mask(x=tmn.b, mask=munis.r)
+  #tmn.b <- terra::project(tmn, crs(munis.r))
+  #tmn.b <- mask(tmn.b, munis.r)
+  tmn.b <- alignRast(tmn, munis.r, 2)
   
-  tmx.b <- projectRaster(tmx, munis.r)
-  tmx.b <- mask(x=tmx.b, mask=munis.r)
+  #tmx.b <- terra::project(tmx, crs(munis.r))
+  #tmx.b <- mask(tmx.b, munis.r)
+  tmx.b <- alignRast(tmx, munis.r, 2)
   
   #caclulate average temperature by month (brick)
   avtemp.b <- 0.36*(3*tmx.b-tmn.b)
@@ -283,6 +311,13 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
   #function to calculate Potential Evapotranspiration (PET)
   calcPET <- function(PET, D, I, a, N)
   {
+    print("calc PET")
+    
+    #terra crashes on calculations below so for now convert to raster objects
+    PET <- raster(PET)
+    I <- raster(I)
+    a <- raster(a)
+    
     #if mean temperature <= 0
     PET[PET<=0]<-0
     
@@ -292,21 +327,24 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
     #else
     PET[PET>0&PET<=26.5]<-0.0444*((10*(PET[PET>0&PET<=26.5]/I[PET[]>0&PET[]<=26.5]))^a[PET[]>0&PET[]<=26.5])*N*D
     
-    return(PET)
+    return(rast(PET))  #return back as terra object
   }
   
   
   #map2 to loop over raster brick (layer per month) and Days list (from purrr, see http://r4ds.had.co.nz/iteration.html)
   #brick needs to passed as a list (see https://geocompr.robinlovelace.net/location.html)
-  PET.b <- 
-    map2(as.list(PET.b), Days, calcPET, I = Idex, a = Adex, N = Ndex) %>% 
-    stack()  #remember to re-stack the list after function
+  PET.l <- map2(as.list(PET.b), Days, calcPET, I = Idex, a = Adex, N = Ndex) 
   
+  PET.b <- rast(PET.l)
+    #c()  #remember to re-stack the list after function
+  print("stacked")
   names(PET.b) <- monlab
   
   #see Victoria et al. 2007 DOI: 10.1175/EI198.1 Table 2 for equations
   #initialise water storage variables 
-  
+
+#2020-07-07 debugged terra to here  
+    
   Stoi <- PAW  #Stoii is month i-1 storage
   Stoii <- Stoi #Stoi is month i storage (in first month use same values)
   
@@ -314,10 +352,10 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
   
   #for creating empty rasters and bricks
   nullRaster <- munis.r
-  nullRaster[!is.na(nullRaster)] <- 0  #set anywhere that is not 'no data' in munis.r to 0
+  nullRaster[nullRaster>0] <- 0  #set anywhere that is not 'no data' in munis.r to 0
   
-  DEF.b <- stack(replicate(12, nullRaster)) #empty brick to save all month's DEF
-  ET.b <- stack(replicate(12, nullRaster))  #empty brick to save all month's ET
+  DEF.b <- c(replicate(12, nullRaster)) #empty brick to save all month's DEF
+  ET.b <- c(replicate(12, nullRaster))  #empty brick to save all month's ET
   
   DEF <- nullRaster #empty layer for temp useage in loop
   ET <- nullRaster #empty layer for temp useage in loop
@@ -383,17 +421,17 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
   
   #calculate Dryness Index
   #avDEF<-mean(DEF.b)#mean annual DEF
-  avDEF <- stackApply(DEF.b, season_indices, mean)  #mean DEF (for specified months), #creates a stack of two layers (season months and non-season months)
+  avDEF <- tapp(DEF.b, season_indices, mean)  #mean DEF (for specified months), #creates a stack of two layers (season months and non-season months)
   #avPET<-mean(PET.b)#mean annual PET
-  avPET <- stackApply(PET.b, season_indices, mean)  #mean PET (for specified months), #creates a stack of two layers (season months and non-season months)
+  avPET <- tapp(PET.b, season_indices, mean)  #mean PET (for specified months), #creates a stack of two layers (season months and non-season months)
   
   avDi <- (100*avDEF) / avPET  #creates a stack of two layers (season months and non-season months)
   Di <- (100*DEF.b) / PET.b
   
   
   #pptn and temp by season if needed
-  avPptn <- stackApply(pre.b, season_indices, mean)
-  avTemp <- stackApply(avtemp.b, season_indices, mean)
+  avPptn <- tapp(pre.b, season_indices, mean)
+  avTemp <- tapp(avtemp.b, season_indices, mean)
   
   
   #Number of months with water deficit - helper function
@@ -403,8 +441,8 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
   countMonths <- function(vect, na.rm=T) { return(length(vect)) }
   
   #calculate various ways of defining water deficif months
-  DEFmonths <- stackApply(DEF.b,season_indices, countWD)  #creates a stack of two layers (season months and non-season months)
-  allmonths <- stackApply(DEF.b,season_indices, countMonths) #creates a stack of two layers (season months and non-season months)
+  DEFmonths <- tapp(DEF.b,season_indices, countWD)  #creates a stack of two layers (season months and non-season months)
+  allmonths <- tapp(DEF.b,season_indices, countMonths) #creates a stack of two layers (season months and non-season months)
   DEFmonths_prop <- DEFmonths / allmonths   #proportion,  #creates a stack of two layers (season months and non-season months)
   
   #Stoidiffc <- allmeanStoi[12] - allmeanStoi[1]  #this does not seem to be used elsewhere...
@@ -503,7 +541,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS)
 
 
 
-outputDir <- "Data"
+outputDir <- "data/raster/physical"
 className <- "Moisture"
 
 #crop_season <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
@@ -518,12 +556,15 @@ if(!dir.exists(paste0(outputDir,"/",className))) { dir.create(paste0(outputDir,"
 
 
 #yr <-2000
-for(yr in 2001:2018)
+for(yr in 2001:2002)
 {
   writeClimRast <- F
   writeClimPdf <- F
-  calcMoistureMaps(munis.r, PAW, yr, BRA.ext, "S", mz1_season, GS = F)
+  calcMoistureMaps(munis.r, PAW, yr, G3MGs.ext, "S", mz1_season, GS = F)
   print(paste0(yr," done"))
 }
 
 
+#year <- 2001
+#hemi="S"
+#season=mz1_season

@@ -3,6 +3,8 @@
 *.xlsx
 *.csv
 Inputs/data/vector/
+*.asc
+*.nc
 
 #pdfs
 *.pdf
