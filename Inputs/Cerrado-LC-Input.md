@@ -35,9 +35,9 @@ So, first. combine the mapbiomas raster files into a single multi-layer
 raster and set `0` values to `No Data`
 
 ``` r
-r <- rast("data/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
+r <- rast("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
 for(i in 2002:2020){
-  r1 <- rast(paste0("data/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-",i,"-1km.tif"))
+  r1 <- rast(paste0("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-",i,"-1km.tif"))
   r <- c(r, r1)
 }
 r[r==0] <- NA
@@ -49,7 +49,7 @@ r
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.47944, -41.27346, -24.68777, -2.328703  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_vPbkbSruUSvo5pI_28512.tif 
+    ## source      : memory 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -167,7 +167,7 @@ rs4
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.09316, -41.65973, -24.00505, -9.829635  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_5Fbacfq6vDLBaXX_28512.tif 
+    ## source      : memory 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -182,13 +182,13 @@ plot(s4, add=T)
 Write multi-layer raster to .tif file
 
 ``` r
-writeRaster(rs4, "data/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif", overwrite=TRUE)
+writeRaster(rs4, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif", overwrite=TRUE)
 ```
 
 Re-load and plot to check this all worked.
 
 ``` r
-new <- rast("data/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
+new <- rast("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
 new
 ```
 
@@ -212,7 +212,7 @@ Now reclassify (no need for disaggregation like for CRAFTY-Brazil,
 because collection 6 include classes for soybeans etc)
 
 ``` r
-classification <- read_excel(paste0("data/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
+classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
 plot(map)
 ```
@@ -257,6 +257,6 @@ plot(G3MGsstates_r_latlon)
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ``` r
-writeRaster(G3MGsmunis_r_latlon, "data/mapbiomas6/G3MGsmunis_r_latlon.tif", overwrite=TRUE)
-writeRaster(G3MGsstates_r_latlon, "data/mapbiomas6/G3MGsstates_r_latlon.tif", overwrite=TRUE)
+writeRaster(G3MGsmunis_r_latlon, "data/raster/socecon/G3MGsmunis_r_latlon.tif", overwrite=TRUE)
+writeRaster(G3MGsstates_r_latlon, "data/raster/socecon/G3MGsstates_r_latlon.tif", overwrite=TRUE)
 ```
