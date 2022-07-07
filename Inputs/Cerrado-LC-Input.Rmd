@@ -34,28 +34,30 @@ plot(r[[1]])
 
 This multi-layer raster needs to be clipped to the extent of our four states of interest.
 
-We do this using state boundary vector (.shp) data  downloaded from the [MapBiomas Platform](https://plataforma.brasil.mapbiomas.org/) (Source: IBGE; Year: 2018). 
+We do this using municiaplity and state boundary vector (.shp) data 
 ```{r}
-s <- vect("data/vector/dashboard_states-static-layer/dashboard_states-static-layer.shp")
-plot(s)
-head(s)
+munis <- vect("data/vector/BRadmin.shp")
+plot(munis)
+head(munis)
 ```
 
-We can see state ids and state names. States ids for our states are `18369`, `18396`, `18397`, `18399`
+We can see state ids and state names. States ids for our states are 50, 51, 52, 31
+
+
 
 The accents on some state names are not being handled well (giving errors/warnings). We'll fix this below before writing out our subset shapefile containing only the four states we want.
 ```{r}
 #state ids in id column
-sids <- c(18369, 18396, 18397, 18399)
+sids <- c(50, 51, 52, 31)
 
 #subset
-G3MGs <- s[s$id %in% sids,]
+G3MGs <- munis[munis$State %in% sids,]
 plot(G3MGs)
 
 head(G3MGs)
 #fix GOIAS name
-G3MGs[1,'name'] <- "GOIAS"
-head(G3MGs)
+#G3MGs[1,'name'] <- "GOIAS"
+#head(G3MGs)
 
 #write to file
 outfile <- "data/vector/G3MGs.shp"
@@ -82,6 +84,7 @@ rs4 <- mask(rs4, s4)
 rs4 <- trim(rs4)
 rs4
 plot(rs4[[1]])
+plot(s4, add=T)
 ```
 
 Write multi-layer raster to .tif file
@@ -96,11 +99,10 @@ new
 plot(new)
 ```
 
-Now reclassify (no need for disaggregation as before, because collection 6 include classes for soybeans etc)
+Now reclassify (no need for disaggregation like for CRAFTY-Brazil, because collection 6 include classes for soybeans etc)
 
 ```{r}
 classification <- read_excel(paste0("data/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
 plot(map)
 ```
-
