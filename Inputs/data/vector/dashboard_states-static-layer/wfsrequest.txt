@@ -1,0 +1,1 @@
+https://production.alerta.mapbiomas.org/geoserver/mapbiomas-alertas/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=mapbiomas-alertas%3Adashboard_states-static-layer&outputFormat=SHAPE-ZIP
