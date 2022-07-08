@@ -2,7 +2,7 @@
 *.tif
 *.xlsx
 *.csv
-Inputs/data/vector/
+Inputs/data/
 *.asc
 *.nc
 
