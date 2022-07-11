@@ -5,11 +5,14 @@
 #versioning tracked in https://github.com/jamesdamillington/Cerrado-G3MGs from 2022-07-07
 #main edits are to: 1. use different study area (extent, resolution) and 2. change raster -> terra package
 
+#the script purports to be able to handle northern (Jan-Dec) and southern hemisphere (Jul-Jun)  agricultural years.
+#but really it is set up mainly to work for the southern hemisphere and there are no checks that 
+#season definitions are consistent with assumptions about which hemisphere is being used 
+
 library(terra)
 library(tidyverse)
 library(ncdf4)
 #library(raster)
-
 
 munis.r <- rast('data/raster/socecon/G3MGsmunis_r_latlon.tif') #from Cerrado-LC-Input.Rmd
 
@@ -31,9 +34,7 @@ PAW[PAW==5]<-35
 #assumes crs of input and target are identical 
 alignRast <- function(input, target, outer, classes)
 {
-  print(paste0("Align rasters"))
   i.crop2 <- crop(input, ext(target)+rep(outer,4)) #initially crop to larger extent than target (i.e. buffer)
-  
   if(classes) { i.rs <- resample(i.crop2, target, method='near') } 
   else { i.rs <- resample(i.crop2, target) }
   i.crop <- crop(i.rs, ext(target))
@@ -55,6 +56,7 @@ nc2raster <- function(ncyear, ncvar)
   #ncvar is a character string indicating which variable from the nc file to access (e.g. "pre", "tmp")
   
   ncname <- fn_fromYearVar(ncyear,ncvar)
+  print(paste0("reading file ",ncname))
   nc <- nc_open(ncname)
   pre_array <- ncvar_get(nc,ncvar)
   lon <- ncvar_get(nc,"lon")
@@ -94,7 +96,6 @@ nc2rasterSH <- function(ncyear, ncvar)
   #ncyear is an integer indicating which year from the ncdf file is to be returned (so for above file ncyear <- 1 would return data for 2001, ncyear <- 4 would give 2004 etc)
   #ncvar is a character string indicating which variable from the nc file to access (e.g. "pre", "tmp")
   
-  
   #for SH neeed to get two years of data! 
   #agricultural year is July ncyear-1 (yrA) to June ncyear (yrB)
   
@@ -104,6 +105,7 @@ nc2rasterSH <- function(ncyear, ncvar)
   #so first get the ncdf file in which yrB is located
   
   ncnameB <- fn_fromYearVar(ncyear,ncvar)
+  print(paste0("reading file ",ncnameB))
   ncB <- nc_open(ncnameB)  #get data for yrB
   
   #get these parameters here (if we need to get for another ncdf file we will below)
@@ -146,7 +148,6 @@ nc2rasterSH <- function(ncyear, ncvar)
     
     ncnameA <- fn_fromYearVar(ncyear-1, ncvar)
     print(paste0("reading file ",ncnameA))
-    
     ncA <- nc_open(ncnameA)  #get data for this year
     
     pre_arrayA <- ncvar_get(ncA,ncvar)
@@ -182,7 +183,7 @@ nc2rasterSH <- function(ncyear, ncvar)
     }
   }
   
-  names(s1) <- c(paste0("Jul",ncyear-1),paste0("Aug",ncyear-1),paste0("Sep",ncyear-1),paste0("Oct",ncyear-1),paste0("Nov",ncyear-1),paste0("Dec",ncyear-1),paste0("Jan",ncyear),paste0("Feb",ncyear),paste0("Mar",ncyear),paste0("Apr",ncyear),paste0("May",ncyear),paste0("Jun",ncyear))
+  names(s1) <- c("Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun")
   
   return(s1)
 }
@@ -220,17 +221,21 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   prefn <- fn_fromYearVar(year,"pre") #precipitation,	millimetres per month  see: https://crudata.uea.ac.uk/cru/data/hrg/#info 
   tmnfn <- fn_fromYearVar(year,"tmn") #monthly average daily minimum temperature,	degrees Celsiusunits are
   tmxfn <- fn_fromYearVar(year,"tmx") #monthly average daily maximum temperature,	degrees Celsius
-  
-  #month labels for plots
-  monlab <- c(paste0("Jan",year),paste0("Feb",year),paste0("Mar",year),paste0("Apr",year),paste0("May",year),paste0("Jun",year),paste0("Jul",year),paste0("Aug",year),paste0("Sep",year),paste0("Oct",year),paste0("Nov",year),paste0("Dec",year))
-  if(hemi == "S")  monlab <- c(paste0("Jul",year-1),paste0("Aug",year-1),paste0("Sep",year-1),paste0("Oct",year-1),paste0("Nov",year-1),paste0("Dec",year-1),paste0("Jan",year),paste0("Feb",year),paste0("Mar",year),paste0("Apr",year),paste0("May",year),paste0("Jun",year))
-  
-  #create season filelabel
+
+  #create labels
   season_label <- paste0(season, collapse="")
-  if(hemi == "S" && season_label == "JulAugSepOctNovDecJanFebMarAprMayJun") season_label <- "All"
-  if(hemi == "N" && season_label == "JanFebMarAprMayJunJulAugSepOctNovDec") season_label <- "All"
+  if(hemi == "N"){
+    monlab <- c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+    year_label <- paste0(year)
+    if(season_label == "JanFebMarAprMayJunJulAugSepOctNovDec") season_label <- "All"
+  }
   
-  
+  if(hemi == "S"){
+    monlab <- c("Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun")
+    year_label <- paste0(year-1,"-",year)
+    if(season_label == "JulAugSepOctNovDecJanFebMarAprMayJun") season_label <- "All"
+  } 
+
   #for testing
   #print(tr)
   #print(prefn)
@@ -254,6 +259,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   }
   
   #align climate data to cells we want to simulate
+  print(paste0("Align rasters"))
   pre.b <- alignRast(pre, munis.r, 2, FALSE)
   tmn.b <- alignRast(tmn, munis.r, 2, FALSE)
   tmx.b <- alignRast(tmx, munis.r, 2, FALSE)
@@ -317,9 +323,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   
   DEF <- nullRaster #empty layer for temp useage in loop
   ET <- nullRaster #empty layer for temp useage in loop
-  
-  #par(mfrow=c(1,1))
-  
+
   #see loopProofs (need to use loop, cannot use map)
   for(i in 1:12)
   {
@@ -375,18 +379,16 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   names(DEF.b) <- monlab    #apply month-year names to the layers (for plotting and access below)
   names(ET.b) <- monlab
   
-  #POTENTIAL ERROR ON NEXT LINE - THIS DOES NOT ACCOUNT FOR SOUTHERN HEMISPHERE YEAR...
-  si_yr <- lapply(season, paste0, year)  #add the year to month names to match monlab format
-  season_indices <- ifelse(monlab %in% si_yr,1,2)  #create index of months to use in stackApply below (1 is in season, 2 is not)
+  #WARNING: check that order of months in season makes sense
+  season_indices <- ifelse(monlab %in% season,1,2)  #create index of months to use in stackApply below (1 is in season, 2 is not)
   
   #calculate Dryness Index
   avDEF <- tapp(DEF.b, season_indices, mean)  #mean DEF (for specified months), #creates a stack of two layers (season months and non-season months)
   avPET <- tapp(PET.b, season_indices, mean)  #mean PET (for specified months), #creates a stack of two layers (season months and non-season months)
-  
+
   avDi <- (100*avDEF) / avPET  #creates a stack of two layers (season months and non-season months)
   
   #create the Moisture Capital Map
-  #MoistureCap <- (75 - avDi[["index_1"]]) / 75  #raster need to use "index_1" to get to months labelled 1 in season_indices
   MoistureCap <- (75 - avDi["1"]) / 75  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
   MoistureCap[MoistureCap<0]<-0
 
@@ -395,18 +397,18 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     GSCap[munis.r %/% 100000 == 42]<-0    #set SC state to 0
     GSCap[munis.r %/% 100000 == 43]<-0    #set RS state to 0
     
-    writeRaster(GSCap, paste0(outputDir,"/",className,"/GSCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
+    writeRaster(GSCap, paste0(outputDir,"/",className,"/GSCap_",season_label,"_",hemi,"_",year_label,".tif"), overwrite=T)
     
-    pdf(paste0(outputDir,"/",className,"/GSCap_",season_label,"_",year,hemi,".pdf"))
-    plot(GSCap, main=paste("GSCap",season_label,year,hemi, sep=" "))  
+    pdf(paste0(outputDir,"/",className,"/GSCap_",season_label,"_",year_label,hemi,".pdf"))
+    plot(GSCap, main=paste("GSCap",season_label,year_label,hemi, sep=" "))  
     dev.off()
   }
   
   if(!GS){
-    writeRaster(MoistureCap, paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
+    writeRaster(MoistureCap, paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",hemi,"_",year_label,".tif"), overwrite=T)
     
-    pdf(paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",year,hemi,".pdf"))
-    plot(MoistureCap, main=paste("MoistureCap",season_label,year,hemi, sep=" "))  #need to use "index_1" to get to months labelled 1 in season_indices
+    pdf(paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",year_label,hemi,".pdf"))
+    plot(MoistureCap, main=paste("MoistureCap",season_label,year_label,hemi, sep=" "))  #need to use "index_1" to get to months labelled 1 in season_indices
     dev.off()
   }
   
@@ -434,50 +436,51 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   #write data to files
   if(writeClimRast)
   {
-    writeRaster(avDEF["1"], paste0(outputDir,"/",className,"/MeanDEF_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    writeRaster(avPET["1"], paste0(outputDir,"/",className,"/MeanPET_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
-    writeRaster(avDi["1"], paste0(outputDir,"/",className,"/MeanDI_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
+    
+    writeRaster(avDEF["1"], paste0(outputDir,"/",className,"/MeanDEF_",season_label,"_",year_label,hemi,".tif"), overwrite=T)  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
+    writeRaster(avPET["1"], paste0(outputDir,"/",className,"/MeanPET_",season_label,"_",year_label,hemi,".tif"),  overwrite=T)
+    writeRaster(avDi["1"], paste0(outputDir,"/",className,"/MeanDI_",season_label,"_",year_label,hemi,".tif"), overwrite=T)
     
     if(additionals)
     {
-      writeRaster(DEFmonths["1"], paste0(outputDir,"/",className,"/CountDEFmonths_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
-      writeRaster(DEFmonths_prop["1"], paste0(outputDir,"/",className,"/PropDEFmonths_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
-      writeRaster(avTemp["1"], paste0(outputDir,"/",className,"/MeanTemp_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
-      writeRaster(avPptn["1"], paste0(outputDir,"/",className,"/MeanPrecip_",season_label,"_",year,hemi,".asc"), format = 'ascii', overwrite=T)
+      writeRaster(DEFmonths["1"], paste0(outputDir,"/",className,"/CountDEFmonths_",season_label,"_",year_label,hemi,".tif"),  overwrite=T)
+      writeRaster(DEFmonths_prop["1"], paste0(outputDir,"/",className,"/PropDEFmonths_",season_label,"_",year_label,hemi,".tif"), overwrite=T)
+      writeRaster(avTemp["1"], paste0(outputDir,"/",className,"/MeanTemp_",season_label,"_",year_label,hemi,".tif"), overwrite=T)
+      writeRaster(avPptn["1"], paste0(outputDir,"/",className,"/MeanPrecip_",season_label,"_",year_label,hemi,".tif"), overwrite=T)
     }
   }
   
   #write pdfs
   if(writeClimPdf)
   {
-    pdf(paste0(outputDir,"/",className,"/DEF_",year,hemi,".pdf"))
+    pdf(paste0(outputDir,"/",className,"/DEF_",year_label,hemi,".pdf"))
     plot(DEF.b, ext = BRA.e)
     dev.off()
     
-    pdf(paste0(outputDir,"/",className,"/PET_",year,hemi,".pdf"))
+    pdf(paste0(outputDir,"/",className,"/PET_",year_label,hemi,".pdf"))
     plot(PET.b, ext = BRA.e)
     dev.off()
     
-    pdf(paste0(outputDir,"/",className,"/ET_",year,hemi,".pdf"))
+    pdf(paste0(outputDir,"/",className,"/ET_",year_label,hemi,".pdf"))
     plot(ET.b, ext = BRA.e)
     dev.off()
     
-    pdf(paste0(outputDir,"/",className,"/PPTN_",year,hemi,".pdf"))
+    pdf(paste0(outputDir,"/",className,"/PPTN_",year_label,hemi,".pdf"))
     plot(pre.b, ext = BRA.e)
     dev.off()
 
-    pdf(paste0(outputDir,"/",className,"/ClimateVariables_",season_label,"_",year,hemi,".pdf"))
-    plot(avDEF["1"], ext = BRA.e, main=paste("meanDEF",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    plot(avPET["1"], ext = BRA.e, main=paste("meanPET",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    plot(avDi["1"], ext = BRA.e, main=paste("meanDI",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
+    pdf(paste0(outputDir,"/",className,"/ClimateVariables_",season_label,"_",year_label,hemi,".pdf"))
+    plot(avDEF["1"], ext = BRA.e, main=paste("meanDEF",season_label,year_label,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
+    plot(avPET["1"], ext = BRA.e, main=paste("meanPET",season_label,year_label,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
+    plot(avDi["1"], ext = BRA.e, main=paste("meanDI",season_label,year_label,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
     dev.off()
     
     if(additionals)
     {
-      pdf(paste0(outputDir,"/",className,"/AdditionalPlots_",year,hemi,".pdf"))
-      plot(Di, ext = BRA.e, main=paste("DI",season_label,year,hemi, sep=" "))
-      plot(DEFmonths["1"], ext = BRA.e, main=paste("count DEFmonths",season_label,year,hemi, sep=" "))
-      plot(DEFmonths_prop["1"], ext = BRA.e, main=paste("prop DEFmonths",season_label,year,hemi, sep=" "))
+      pdf(paste0(outputDir,"/",className,"/AdditionalPlots_",year_label,hemi,".pdf"))
+      plot(Di, ext = BRA.e, main=paste("DI",season_label,year_label,hemi, sep=" "))
+      plot(DEFmonths["1"], ext = BRA.e, main=paste("count DEFmonths",season_label,year_label,hemi, sep=" "))
+      plot(DEFmonths_prop["1"], ext = BRA.e, main=paste("prop DEFmonths",season_label,year_label,hemi, sep=" "))
       dev.off()
     }
   }
@@ -495,7 +498,6 @@ className <- "Moisture"
 #soy_season <- c("Oct","Nov","Dec","Jan","Feb","Mar")
 mz1_season <- c("Oct","Nov","Dec","Jan","Feb","Mar")
 mz2_season <- c("Jan","Feb","Mar","Apr","May","Jun")
-crops <- list(mz1_season, mz2_season)
 
 
 #create the output directory for this classification if it does not exist
