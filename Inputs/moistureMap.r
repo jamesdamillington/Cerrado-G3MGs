@@ -12,7 +12,6 @@
 library(terra)
 library(tidyverse)
 library(ncdf4)
-#library(raster)
 
 munis.r <- rast('data/raster/socecon/G3MGsmunis_r_latlon.tif') #from Cerrado-LC-Input.Rmd
 
@@ -236,14 +235,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     if(season_label == "JulAugSepOctNovDecJanFebMarAprMayJun") season_label <- "All"
   } 
 
-  #for testing
-  #print(tr)
-  #print(prefn)
-  #print(tmnfn)
-  #print(tmxfn)
-  
   #read climate files
-  
   #northern hemisphere
   if(hemi == "N") {
     pre <- nc2raster(ncyear=year,ncvar="pre")
@@ -505,7 +497,7 @@ if(!dir.exists(paste0(outputDir,"/",className))) { dir.create(paste0(outputDir,"
 
 
 #yr <-2000
-for(yr in 2001:2002)
+for(yr in 2001:2018)
 {
   writeClimRast <- F
   writeClimPdf <- F
@@ -514,7 +506,3 @@ for(yr in 2001:2002)
 }
 
 
-year <- 2001
-hemi="S"
-season=mz1_season
-BRA.e <- G3MGs.ext
