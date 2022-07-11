@@ -39,5 +39,23 @@ writeRaster(cer2005, "data/raster/socecon/Transport/PortAccessCap2005_G3MGs.tif"
 writeRaster(cer2010, "data/raster/socecon/Transport/PortAccessCap2010_G3MGs.tif", "overwrite"=T)
 writeRaster(cer2017, "data/raster/socecon/Transport/PortAccessCap2017_G3MGs.tif", "overwrite"=T)
 
+#Protection Capital
+#https://github.com/jamesdamillington/CRAFTYInput/blob/master/LandProtectionMap.r
+protection <- rast("data/raster/socecon/LandProtection/All_ProtectionMap_025.asc")
+protection <- terra::project(protection, "EPSG:4326")
+protection <- alignRast(protection, munis.r, 2, TRUE)
+writeRaster(protection, "data/raster/socecon/LandProtection/All_ProtectionMap_025_G3MGs.tif", "overwrite"=T)
 
+#Land Value Capital
+#input files created by https://github.com/jamesdamillington/CRAFTYInput/blob/master/LandValueMap.r
+LV01 <- rast("data/raster/socecon/LandValue/LandPrice_Capital_08_2001.asc") 
+LV17 <- rast("data/raster/socecon/LandValue/LandPrice_Capital_08_2017.asc") 
 
+LV01 <- terra::project(LV01, "EPSG:4326")
+LV17 <- terra::project(LV17, "EPSG:4326")
+
+LV01 <- alignRast(LV01, munis.r, 2, TRUE)
+LV17 <- alignRast(LV17, munis.r, 2, TRUE)
+
+writeRaster(LV01, "data/raster/socecon/LandProtection/LandPrice_Capital_08_2001_G3MGs.tif", "overwrite"=T)
+writeRaster(LV17, "data/raster/socecon/LandProtection/LandPrice_Capital_08_2017_G3MGs.tif", "overwrite"=T)
