@@ -7,7 +7,7 @@ library(terra)
 alignRast <- function(input, target, outer, classes)
 {
   i.crop2 <- crop(input, ext(target)+rep(outer,4)) #initially crop to larger extent than target (i.e. buffer)
-  if(classes) { i.rs <- resample(i.crop2, target, method='near') } 
+  if(classes) { i.rs <- resample(i.crop2, target, method='near') }  #if categorical map
   else { i.rs <- resample(i.crop2, target) }
   i.crop <- crop(i.rs, ext(target))
   i.mask <- mask(i.crop, target)
@@ -59,3 +59,18 @@ LV17 <- alignRast(LV17, munis.r, 2, TRUE)
 
 writeRaster(LV01, "data/raster/socecon/LandProtection/LandPrice_Capital_08_2001_G3MGs.tif", "overwrite"=T)
 writeRaster(LV17, "data/raster/socecon/LandProtection/LandPrice_Capital_08_2017_G3MGs.tif", "overwrite"=T)
+
+#Economic
+econ <- rast("data/raster/socecon/Economic/AgriLocations2001.asc")
+econ <- terra::project(econ, "EPSG:4326")
+econ <- round(econ, 2)
+econ <- alignRast(econ, munis.r, 2, TRUE)
+writeRaster(econ, "data/raster/socecon/Economic/AgriLocations2001_G3MGs.tif", "overwrite"=T)
+
+#Slope
+slope <- rast("data/raster/physical/Slope/OAgri-slope_2018-08-16.asc")
+slope <- terra::project(slope, "EPSG:4326")
+hist(slope)  #check if should use categorical resample (answer: yes)
+slope <- alignRast(slope, munis.r, 2, TRUE)
+writeRaster(econ, "data/raster/physical/Slope/OAgri-slope_2018-08-16_G3MGs.tif", "overwrite"=T)
+
