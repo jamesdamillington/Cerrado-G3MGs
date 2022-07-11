@@ -8,7 +8,7 @@
 library(terra)
 library(tidyverse)
 library(ncdf4)
-library(raster)
+#library(raster)
 
 
 munis.r <- rast('data/raster/socecon/G3MGsmunis_r_latlon.tif') #from Cerrado-LC-Input.Rmd
@@ -27,7 +27,8 @@ PAW[PAW==4]<-55
 PAW[PAW==5]<-35
 #plot(PAW)
 
-#create climate raster with same origin, resolution, extent, crs of target raster 
+#align origin, resolution, extent and data cells (mask) of input raster to output raster 
+#assumes crs of input and target are identical 
 alignRast <- function(input, target, outer, classes)
 {
   print(paste0("Align rasters"))
@@ -68,16 +69,12 @@ nc2raster <- function(ncyear, ncvar)
   
   tr <- y_fromYear(ncyear)
   startmonth <- (tr * 12) - 11
-  
-  #s1 <- rast(t(pre_array[,,startmonth][,N:1]), xmin=lon[1]-dx/2, xmax=lon[M]+dx/2, ymin=lat[1]-dy/2, ymax=lat[N]+dy/2, crs=CRS("EPSG4326"))
   s1 <- rast(t(pre_array[,,startmonth][,N:1]), extent=ext_lon, crs="EPSG:4326")
-  
   startmonth <- startmonth + 1
   endmonth <- startmonth + 10 
   
   for(mon in startmonth:endmonth)
   {
-   #s1 <- c(s1, rast(t(pre_array[,,mon][,N:1]), xmin=lon[1]-dx/2, xmax=lon[M]+dx/2, ymin=lat[1]-dy/2, ymax=lat[N]+dy/2, crs=CRS("EPSG4326")))
    s1 <- c(s1, rast(t(pre_array[,,mon][,N:1]), extent=ext_lon, crs="EPSG:4326"))
   }
   
@@ -85,8 +82,6 @@ nc2raster <- function(ncyear, ncvar)
   
   return(s1)
 }
-
-
 
 #this function July to June (SH agricultural year)
 nc2rasterSH <- function(ncyear, ncvar)
@@ -130,27 +125,19 @@ nc2rasterSH <- function(ncyear, ncvar)
   #startmonth of yrB is January
   #endmonth of yrB is June
   
-  #startmonth <- (ncyear * 12) - 11
-  
   tr <- y_fromYear(ncyear)
   
   #works as long as ncyear (yrB) is not the first in the ncdf file
   if(tr != 1) {
     
     startmonth <- (tr * 12) - 17  
-    
-    #s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326")
     s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), extent=ext_lonB, crs="EPSG:4326")
-    #s1 <- rast(t(pre_arrayB[,,startmonth][,NB:1]), crs="EPSG:4326")
-    
     startmonth <- startmonth + 1
     endmonth <- startmonth + 10 
     
     for(mon in startmonth:endmonth)
     {
-      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326"))
       s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), extent=ext_lonB, crs="EPSG:4326"))
-      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), crs="EPSG:4326"))
     }
   }
   
@@ -176,19 +163,13 @@ nc2rasterSH <- function(ncyear, ncvar)
     #from earliest nc file get last 6 months
     trA <- y_fromYear(ncyear-1)
     startmonthA <- (trA * 12) - 5 
-    
-    #s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), xmin=lonA[1]-dxA/2, xmax=lonA[MA]+dxA/2, ymin=latA[1]-dyA/2, ymax=latA[N.A]+dyA/2, crs="EPSG:4326")
     s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), extent=ext_lonA, crs="EPSG:4326")
-    #s1 <- rast(t(pre_arrayA[,,startmonthA][,N.A:1]), crs="EPSG:4326")
-    
     startmonthA <- startmonthA + 1
     endmonthA <- startmonthA + 4 
     
     for(mon in startmonthA:endmonthA)
     {
-      #s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), xmin=lonA[1]-dxA/2, xmax=lonA[MA]+dxA/2, ymin=latA[1]-dyA/2, ymax=latA[N.A]+dyA/2, crs="EPSG:4326"))
       s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), extent=ext_lonA, crs="EPSG:4326"))
-      #s1 <- c(s1, rast(t(pre_arrayA[,,mon][,N.A:1]), crs="EPSG:4326"))
     }
     
     #from later nc file get first 6 months
@@ -197,11 +178,8 @@ nc2rasterSH <- function(ncyear, ncvar)
     
     for(mon in startmonth:endmonth)
     {
-      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), xmin=lonB[1]-dxB/2, xmax=lonB[MB]+dxB/2, ymin=latB[1]-dyB/2, ymax=latB[NB]+dyB/2, crs="EPSG:4326"))
       s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), extent=ext_lonB, crs="EPSG:4326"))
-      #s1 <- c(s1, rast(t(pre_arrayB[,,mon][,NB:1]), crs="EPSG:4326"))
     }
-    
   }
   
   names(s1) <- c(paste0("Jul",ncyear-1),paste0("Aug",ncyear-1),paste0("Sep",ncyear-1),paste0("Oct",ncyear-1),paste0("Nov",ncyear-1),paste0("Dec",ncyear-1),paste0("Jan",ncyear),paste0("Feb",ncyear),paste0("Mar",ncyear),paste0("Apr",ncyear),paste0("May",ncyear),paste0("Jun",ncyear))
@@ -275,21 +253,9 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     tmx <- nc2rasterSH(ncyear=year,ncvar="tmx")
   }
   
-  #pdf(paste0("Data/pre",year,".pdf"))
-  #plot(pre, ext = BRA.e)
-  #dev.off()
-  
-  #project and crop bricks to extent we want for Brazil
-  #pre.b <- terra::project(pre, crs(munis.r))
-  #pre.b <- mask(pre.b, munis.r)
+  #align climate data to cells we want to simulate
   pre.b <- alignRast(pre, munis.r, 2, FALSE)
-  
-  #tmn.b <- terra::project(tmn, crs(munis.r))
-  #tmn.b <- mask(tmn.b, munis.r)
   tmn.b <- alignRast(tmn, munis.r, 2, FALSE)
-  
-  #tmx.b <- terra::project(tmx, crs(munis.r))
-  #tmx.b <- mask(tmx.b, munis.r)
   tmx.b <- alignRast(tmx, munis.r, 2, FALSE)
   
   #caclulate average temperature by month (brick)
@@ -306,19 +272,13 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   Idex <- 12*((0.2*Ta)^1.514)#1st regional thermal index
   Adex <- 0.49239+1.7912*10^-2*Idex-7.71*10^-5*Idex^2+6.75*10^-7*Idex^3#2nd regional thermal index
   Ndex <- 12##NEED REAL VALUE
-  
-  
+
   #initialize PET with mean temperatures
   PET.b <- avtemp.b 
   
   #function to calculate Potential Evapotranspiration (PET)
   calcPET <- function(PET, D, I, a, N)
   {
-    #terra crashes on calculations below so for now convert to raster objects
-    #PET <- raster(PET)
-    #I <- raster(I)
-    #a <- raster(a)
-    
     #if mean temperature <= 0
     PET[PET<=0]<-0
     
@@ -326,10 +286,8 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     PET[PET>26.5]<-(-415.85+32.24*PET[PET>26.5]-0.43*(PET[PET>26.5]^2))*(N/12)*(D/30)
     
     #else
-    #PET[PET>0&PET<=26.5]<-0.0444*((10*(PET[PET>0&PET<=26.5]/I[PET[]>0&PET[]<=26.5]))^a[PET[]>0&PET[]<=26.5])*N*D #terra fails
-    PET[PET>0&PET<=26.5]<-0.0444*((10*(PET[PET>0&PET<=26.5]/I[PET>0&PET<=26.5]))^a[PET>0&PET<=26.5])*N*D #terra fails
+    PET[PET>0&PET<=26.5]<-0.0444*((10*(PET[PET>0&PET<=26.5]/I[PET>0&PET<=26.5]))^a[PET>0&PET<=26.5])*N*D #terra 
     
-    #return(rast(PET))  #return back as terra object
     return(PET)  #return back as terra object
   }
   
@@ -412,8 +370,7 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     #copy DEF to DEF brick
     DEF.b[[i]] <- DEF
     ET.b[[i]] <- ET
-    
-  }
+ }
   
   names(DEF.b) <- monlab    #apply month-year names to the layers (for plotting and access below)
   names(ET.b) <- monlab
@@ -423,12 +380,36 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   season_indices <- ifelse(monlab %in% si_yr,1,2)  #create index of months to use in stackApply below (1 is in season, 2 is not)
   
   #calculate Dryness Index
-  #avDEF<-mean(DEF.b)#mean annual DEF
   avDEF <- tapp(DEF.b, season_indices, mean)  #mean DEF (for specified months), #creates a stack of two layers (season months and non-season months)
-  #avPET<-mean(PET.b)#mean annual PET
   avPET <- tapp(PET.b, season_indices, mean)  #mean PET (for specified months), #creates a stack of two layers (season months and non-season months)
   
   avDi <- (100*avDEF) / avPET  #creates a stack of two layers (season months and non-season months)
+  
+  #create the Moisture Capital Map
+  #MoistureCap <- (75 - avDi[["index_1"]]) / 75  #raster need to use "index_1" to get to months labelled 1 in season_indices
+  MoistureCap <- (75 - avDi["1"]) / 75  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
+  MoistureCap[MoistureCap<0]<-0
+
+  if(GS){
+    GSCap <- MoistureCap
+    GSCap[munis.r %/% 100000 == 42]<-0    #set SC state to 0
+    GSCap[munis.r %/% 100000 == 43]<-0    #set RS state to 0
+    
+    writeRaster(GSCap, paste0(outputDir,"/",className,"/GSCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
+    
+    pdf(paste0(outputDir,"/",className,"/GSCap_",season_label,"_",year,hemi,".pdf"))
+    plot(GSCap, main=paste("GSCap",season_label,year,hemi, sep=" "))  
+    dev.off()
+  }
+  
+  if(!GS){
+    writeRaster(MoistureCap, paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
+    
+    pdf(paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",year,hemi,".pdf"))
+    plot(MoistureCap, main=paste("MoistureCap",season_label,year,hemi, sep=" "))  #need to use "index_1" to get to months labelled 1 in season_indices
+    dev.off()
+  }
+  
   
   if(additionals){
     print("additionals")
@@ -469,7 +450,6 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
   #write pdfs
   if(writeClimPdf)
   {
-    
     pdf(paste0(outputDir,"/",className,"/DEF_",year,hemi,".pdf"))
     plot(DEF.b, ext = BRA.e)
     dev.off()
@@ -487,67 +467,24 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
     dev.off()
 
     pdf(paste0(outputDir,"/",className,"/ClimateVariables_",season_label,"_",year,hemi,".pdf"))
-    #pdf(paste0(outputDir,"/",className,"/meanDEF_",season_label,"_",year,hemi,".pdf"))
     plot(avDEF["1"], ext = BRA.e, main=paste("meanDEF",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    #dev.off()
-    
-    #pdf(paste0(outputDir,"/",className,"/meanPET_",season_label,"_",year,hemi,".pdf"))
     plot(avPET["1"], ext = BRA.e, main=paste("meanPET",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    #dev.off()
-    
-    #pdf(paste0(outputDir,"/",className,"/meanDI_",season_label,"_",year,hemi,".pdf"))
     plot(avDi["1"], ext = BRA.e, main=paste("meanDI",season_label,year,hemi, sep=" "))  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-    #dev.off()
+    dev.off()
     
     if(additionals)
     {
-      pdf(paste0(outputDir,"/",className,"/DI_",year,hemi,".pdf"))
-      plot(Di, ext = BRA.e)
-      dev.off()
-  
-      #pdf(paste0(outputDir,"/",className,"/DEFmonths_",season_label,"_",year,hemi,".pdf"))
+      pdf(paste0(outputDir,"/",className,"/AdditionalPlots_",year,hemi,".pdf"))
+      plot(Di, ext = BRA.e, main=paste("DI",season_label,year,hemi, sep=" "))
       plot(DEFmonths["1"], ext = BRA.e, main=paste("count DEFmonths",season_label,year,hemi, sep=" "))
-      #dev.off()
-      
-      #pdf(paste0(outputDir,"/",className,"/DEFmonths_prop_",season_label,"_",year,hemi,".pdf"))
       plot(DEFmonths_prop["1"], ext = BRA.e, main=paste("prop DEFmonths",season_label,year,hemi, sep=" "))
       dev.off()
     }
-    
   }
-  
-  #create the Moisture Capital Map
-  #MoistureCap <- (75 - avDi[["index_1"]]) / 75  #raster need to use "index_1" to get to months labelled 1 in season_indices
-  MoistureCap <- (75 - avDi["1"]) / 75  #terra use partial matching of names (single []) to get months labelled 1 in season_indices
-  MoistureCap[MoistureCap<0]<-0
-  
-  
-  if(GS) {
-    GSCap <- MoistureCap
-    GSCap[munis.r %/% 100000 == 42]<-0    #set SC state to 0
-    GSCap[munis.r %/% 100000 == 43]<-0    #set RS state to 0
-    
-    pdf(paste0(outputDir,"/",className,"/GSCap_",season_label,"_",year,hemi,".pdf"))
-    plot(GSCap, main=paste("GSCap",season_label,year,hemi, sep=" "))  
-    dev.off()
-    
-    writeRaster(GSCap, paste0(outputDir,"/",className,"/GSCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
-    
-  }
-  
-  if(!GS){
-    
-    writeRaster(MoistureCap, paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",hemi,"_",year,".tif"), overwrite=T)
-    
-    pdf(paste0(outputDir,"/",className,"/MoistureCap_",season_label,"_",year,hemi,".pdf"))
-    plot(MoistureCap, main=paste("MoistureCap",season_label,year,hemi, sep=" "))  #need to use "index_1" to get to months labelled 1 in season_indices
-    dev.off()
-  }
-  
-  rm(pre,tmn,tmx,pre.b,tmn.b,tmx.b,PET.b,DEF.b,ET.b)
-  
-}
 
+  #cleean up for next year
+  rm(pre,tmn,tmx,pre.b,tmn.b,tmx.b,PET.b,DEF.b,ET.b)
+}
 
 
 
