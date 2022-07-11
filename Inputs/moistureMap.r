@@ -386,8 +386,8 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, additi
 
   if(GS){
     GSCap <- MoistureCap
-    GSCap[munis.r %/% 100000 == 42]<-0    #set SC state to 0
-    GSCap[munis.r %/% 100000 == 43]<-0    #set RS state to 0
+    #GSCap[munis.r %/% 100000 == 42]<-0    #set SC state to 0
+    #GSCap[munis.r %/% 100000 == 43]<-0    #set RS state to 0
     
     writeRaster(GSCap, paste0(outputDir,"/",className,"/GSCap_",season_label,"_",hemi,"_",year_label,".tif"), overwrite=T)
     
@@ -501,8 +501,6 @@ for(yr in 2001:2018)
 {
   writeClimRast <- F
   writeClimPdf <- F
-  calcMoistureMaps(munis.r, PAW, yr, G3MGs.ext, "S", mz1_season, GS = F, additionals=F)
+  calcMoistureMaps(munis.r, PAW, yr, G3MGs.ext, "S", mz2_season, GS = T, additionals=F)
   print(paste0(yr," done"))
 }
-
-
