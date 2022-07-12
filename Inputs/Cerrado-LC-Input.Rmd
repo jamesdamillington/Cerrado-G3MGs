@@ -94,6 +94,10 @@ Re-load and plot to check this all worked.
 new <- rast("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
 new
 plot(new)
+
+#check classes present in each year
+unique(new, incomparables = TRUE)
+
 ```
 
 Now reclassify (no need for disaggregation like for CRAFTY-Brazil, because collection 6 include classes for soybeans etc)
