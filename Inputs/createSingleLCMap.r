@@ -13,7 +13,7 @@ sim_yrs <- c(2001, 2005, 2010)   #single LC made for all these years
 reclass <- "reclass1"
 
 #target names
-tnames <- c("Nature", "Other Agri", "Agri", "Other", "Pasture")  #order is target id
+tnames <- c("Nature", "OAgri", "Agri", "Other", "Pasture")  #order is target id
 
 #if binary true output a binary map where 1 = target LC and 0 is not
 #if binary false, output map where target LC value is maintained, all others set to 0
