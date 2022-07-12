@@ -49,7 +49,7 @@ r
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.47944, -41.27346, -24.68777, -2.328703  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : memory 
+    ## source      : spat_gQimBc0MFtLCAWf_13401.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
     ## max values  :          48,          48,          48,          48,          48,          48, ...
@@ -212,12 +212,16 @@ Now reclassify (no need for disaggregation like for CRAFTY-Brazil,
 because collection 6 include classes for soybeans etc)
 
 ``` r
-classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
+classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'mb6-reclass1', range="B1:C35", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
 plot(map)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
+writeRaster(map, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km-reclass1.tif", overwrite=T) #write!
+```
 
 Create raster maps of states and municipalities (for region.csv)
 

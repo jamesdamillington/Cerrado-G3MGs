@@ -99,9 +99,10 @@ plot(new)
 Now reclassify (no need for disaggregation like for CRAFTY-Brazil, because collection 6 include classes for soybeans etc)
 
 ```{r}
-classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'Mapbiomas6', range="G1:H35", col_names=T)  
+classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'mb6-reclass1', range="B1:C35", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
 plot(map)
+writeRaster(map, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km-reclass1.tif", overwrite=T) #write!
 ```
 
 Create raster maps of states and municipalities (for region.csv)
