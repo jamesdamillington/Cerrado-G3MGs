@@ -8,51 +8,69 @@
 #main edits are to: 1. change raster -> terra package and 2. import multi-layer tifs (as createSingleLCMap.r is updated for terra)
 
 
-library(raster)
+library(terra)
 
 #assumes focal value = 1
-buf_width <- 5000  #width of buffer in m
-BKGs <- list(0.05,0.05,0.0)  #background valeus
-BUFs <- list(0.95,0.95,0.75) #buffer values
-LCs <- list("Agri","OAgri","Nature") #the maps to work through
-years <- c(2005, 2010)
-suffix <- "_PastureB_Disagg.asc"
+buf_width <- 1000  #width of buffer in m
+#BKGs <- c(0.05,0.05,0.0)  #background valeus
+BKGs <- c(0.0,0.05,0.05,0.0,0.0)  #background valeus
+#BUFs <- c(0.95,0.95,0.75) #buffer values
+BUFs <- c(0.75,0.95,0.95,0.0,0.0) #buffer values
+#LCs <- c("Agri","OAgri","Nature") #the maps to work through
+tnames <- c("Nature", "OAgri", "Agri", "Other", "Pasture")  #order is target id
 
+targets <- c(1,2,3)
+
+years <- c(2001)
+reclass <- "reclass1"
+
+#yr <- 2005
+#i<-2
 
 for(yr in years){
+
+  #singleLC (multi-layer) from createSingleLCMap.r
+  lcs <- rast(paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",yr,"-1km-",reclass,"-singleLCs.tif"))  #land cover from LandCoverMap.r (or ClassifyDisaggregateMap.r)
   
-  for(i in seq_along(LCs)){
+  for(i in targets){
     
     print(yr)
-    print(LCs[[i]])
+    print(tnames[i])
     print(paste0("Start: ",Sys.time()))
     
-    #create single LC map for the appropriate LC createSingleLCMap.r
-    lc <- raster(paste0("Data/ObservedLCmaps/singleLC_",LCs[[i]],"_",yr,suffix))  #land cover from LandCoverMap.r (or ClassifyDisaggregateMap.r)
-    
-    crs(lc) <- latlong <- "+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs "
+    lc <- lcs[[tnames[i]]]  #get this LC
     
     #crop (for testing)
-    #e <- extent(-60,-55,-15,-10)
+    #e <- ext(-56,-55,-24,-23)
     #lc <- crop(lc,e)
-    #plot(lc)
-    
+
     lc[lc == 0] <- NA  #set 0 to NA for buffer
     
-    bf <- buffer(lc, width=buf_width, doEdge=T)  #buffer width of 5km
+    a <- global(lc, "notNA")  #needed for next check (any data in layer)
     
-    s <- stack(lc, bf)
+    if(a$notNA > 0) {  #if there is no cells of the class terra::buffer will crash
     
-    s[is.na(s)] <- BKGs[[i]]
-    #plot(s)
+      bf <- buffer(lc, width=buf_width)  #"Unit is meter if x has a longitude/latitude CRS", from https://rspatial.github.io/terra/reference/buffer.html
+      bf[!(bf)] <- NA
+    } else { 
+      bf <- lc     #if no cells 
+    }
+      
+    s <- c(lc, bf)  #stack
     
+    s[is.na(s)] <- BKGs[i]  #set cells that are neither target nor buffer to background value
+    #plot(s)   
+    
+    #function sets target LC cells to 1, and buffer cells to buffer value 
     setB <- function(a , b){
-      ifelse(a != 1 & b == 1, BUFs[[i]], a)
+      ifelse(a != 1 & b == 1, BUFs[i], a)
     }
     
-    out <- overlay(s, fun=setB)
-    
-    writeRaster(out, paste0("Data/",LCs[[i]],"Access_",yr,suffix), format = 'ascii', overwrite=T)
+    #apply the function
+    out <- lapp(s, fun=setB)
+    plot(out)
+
+    writeRaster(out, paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",yr,"-1km-",reclass,"-",tnames[i],"Access.tif"), overwrite=T)
     
     print(paste0("End: ",Sys.time()))
   }
