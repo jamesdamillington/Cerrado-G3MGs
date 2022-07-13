@@ -74,3 +74,8 @@ hist(slope)  #check if should use categorical resample (answer: yes)
 slope <- alignRast(slope, munis.r, 2, TRUE)
 writeRaster(econ, "data/raster/physical/Slope/OAgri-slope_2018-08-16_G3MGs.tif", "overwrite"=T)
 
+#HumanDev
+hdev <- rast("data/raster/socecon/HumanDev/HumanCapital2001.asc")
+hdev <- terra::project(hdev, "EPSG:4326")
+hdev <- alignRast(hdev, munis.r, 2, TRUE)
+writeRaster(hdev, "data/raster/socecon/HumanDev/HumanCapital2001_G3MGs.tif", "overwrite"=T)
