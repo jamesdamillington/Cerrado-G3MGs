@@ -1,7 +1,7 @@
 ---
 title: "Cerrado Land Cover Input"
 author: "James D.A. Millington"
-date: "July 2022"
+date: "April 2023"
 output: github_document
 #  html_document: 
 #    keep_md: yes
@@ -16,15 +16,15 @@ library(readxl)
 
 This document presents a record of analysis to create land cover inputs to an application of CRAFTY to Cerrado biome in four states (GO, MT, MS, MG). 
 
-[MapBiomas](https://mapbiomas.org/en) Collection 6 Land Cover raster (.tif) files were downloaded for 2001-2020 for the Cerrado biome via the Toolkits in Google Earth Engine. Spatial resolution was changed from from 30m to 1000m in the run dialogue. Outputs had naming convention _mapbiomas-brazil-collection-60-cerrado-YYYY-1km.tif_ where _YYYY_ is four digit year. 
+[MapBiomas](https://mapbiomas.org/en) Collection 7 Land Cover raster (.tif) files were downloaded for 2001-2021 for the Cerrado biome via the Toolkits in Google Earth Engine. Spatial resolution was changed from from 30m to 1000m in the run dialogue. Outputs had naming convention _mapbiomas-brazil-collection-70-cerrado-YYYY-1km.tif_ where _YYYY_ is four digit year. 
 
 Because we can download mapbiomas data at our desired resolution (whereas previously only 30m was available), we will take a different approach to develop the input region file for CRAFTY [than used for CRAFTY Brazil](https://github.com/jamesdamillington/BrazilInputMaps). Rather than creating the BaseRaster first from a rasterised vector, we'll use the mapbiomas raster as a base and work from there. 
 
 So, first. combine the mapbiomas raster files into a single multi-layer raster and set `0` values to `No Data`
 ```{r}
-r <- rast("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
-for(i in 2002:2020){
-  r1 <- rast(paste0("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-",i,"-1km.tif"))
+r <- rast("data/raster/mapbiomas7/mapbiomas-brazil-collection-70-cerrado-2001-1km.tif")
+for(i in 2002:2021){
+  r1 <- rast(paste0("data/raster/mapbiomas7/mapbiomas-brazil-collection-70-cerrado-",i,"-1km.tif"))
   r <- c(r, r1)
 }
 r[r==0] <- NA
@@ -86,12 +86,12 @@ plot(s4, add=T)
 
 Write multi-layer raster to .tif file
 ```{r}
-writeRaster(rs4, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif", overwrite=TRUE)
+writeRaster(rs4, "data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km.tif", overwrite=TRUE)
 ```
 
 Re-load and plot to check this all worked. 
 ```{r}
-new <- rast("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
+new <- rast("data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km.tif")
 new
 plot(new)
 
@@ -100,24 +100,16 @@ unique(new, incomparables = TRUE)
 
 ```
 
-Now reclassify (no need for disaggregation like for CRAFTY-Brazil, because collection 6 include classes for soybeans etc)
+Now reclassify (no need for disaggregation like for CRAFTY-Brazil, because collection 7 include classes for soybeans etc)
 
 ```{r}
-classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'mb6-reclass1', range="B1:C35", col_names=T)  
+classification <- read_excel(paste0("data/tables/mapbiomas7/MapBiomas_CRAFTY_classifications_v7.xlsx"), sheet = 'mb7-reclass1', range="B1:C37", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
 plot(map)
-writeRaster(map, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km-reclass1.tif", overwrite=T) #write!
+writeRaster(map, "data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km-reclass1.tif", overwrite=T) #write!
 ```
 
-Create raster maps of states and municipalities (for region.csv)
-
-
-dimensions  : 1578, 2052, 20  (nrow, ncol, nlyr)
-resolution  : 0.008983153, 0.008983153  (x, y)
-extent      : -60.09316, -41.65973, -24.00505, -9.829635  (xmin, xmax, ymin, ymax)
-coord. ref. : lon/lat WGS 84 (EPSG:4326)
-
-
+Create raster maps of states and municipalities (for region.csv), usnf dimensions etc from 'new' `rast`
 
 ```{r}
 G3MGsadmin_latlon <- rast(

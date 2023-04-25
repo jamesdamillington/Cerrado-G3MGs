@@ -1,13 +1,13 @@
 Cerrado Land Cover Input
 ================
 James D.A. Millington
-July 2022
+April 2023
 
 ``` r
 library(terra)
 ```
 
-    ## terra 1.5.34
+    ## terra 1.7.29
 
 ``` r
 library(readxl)
@@ -17,11 +17,11 @@ This document presents a record of analysis to create land cover inputs
 to an application of CRAFTY to Cerrado biome in four states (GO, MT, MS,
 MG).
 
-[MapBiomas](https://mapbiomas.org/en) Collection 6 Land Cover raster
-(.tif) files were downloaded for 2001-2020 for the Cerrado biome via the
+[MapBiomas](https://mapbiomas.org/en) Collection 7 Land Cover raster
+(.tif) files were downloaded for 2001-2021 for the Cerrado biome via the
 Toolkits in Google Earth Engine. Spatial resolution was changed from
 from 30m to 1000m in the run dialogue. Outputs had naming convention
-*mapbiomas-brazil-collection-60-cerrado-YYYY-1km.tif* where *YYYY* is
+*mapbiomas-brazil-collection-70-cerrado-YYYY-1km.tif* where *YYYY* is
 four digit year.
 
 Because we can download mapbiomas data at our desired resolution
@@ -35,24 +35,29 @@ So, first. combine the mapbiomas raster files into a single multi-layer
 raster and set `0` values to `No Data`
 
 ``` r
-r <- rast("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-2001-1km.tif")
-for(i in 2002:2020){
-  r1 <- rast(paste0("data/raster/mapbiomas6/mapbiomas-brazil-collection-60-cerrado-",i,"-1km.tif"))
+r <- rast("data/raster/mapbiomas7/mapbiomas-brazil-collection-70-cerrado-2001-1km.tif")
+for(i in 2002:2021){
+  r1 <- rast(paste0("data/raster/mapbiomas7/mapbiomas-brazil-collection-70-cerrado-",i,"-1km.tif"))
   r <- c(r, r1)
 }
 r[r==0] <- NA
+```
+
+    ## |---------|---------|---------|---------|=========================================                                          |---------|---------|---------|---------|=========================================                                          
+
+``` r
 r
 ```
 
     ## class       : SpatRaster 
-    ## dimensions  : 2489, 2138, 20  (nrow, ncol, nlyr)
+    ## dimensions  : 2489, 2138, 21  (nrow, ncol, nlyr)
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.47944, -41.27346, -24.68777, -2.328703  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : spat_gQimBc0MFtLCAWf_13401.tif 
+    ## source      : spat_dA5LpQpBuhGMjxQ_72548.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
-    ## max values  :          48,          48,          48,          48,          48,          48, ...
+    ## max values  :          62,          62,          62,          62,          62,          62, ...
 
 ``` r
 plot(r[[1]])
@@ -157,20 +162,35 @@ four-state vector (plot one layer to check)
 
 ``` r
 rs4 <- crop(r , ext(s4)) 
+```
+
+    ## |---------|---------|---------|---------|=========================================                                          
+
+``` r
 rs4 <- mask(rs4, s4)
+```
+
+    ## |---------|---------|---------|---------|=========================================                                          
+
+``` r
 rs4 <- trim(rs4)
+```
+
+    ## |---------|---------|---------|---------|=========================================                                          
+
+``` r
 rs4
 ```
 
     ## class       : SpatRaster 
-    ## dimensions  : 1578, 2052, 20  (nrow, ncol, nlyr)
+    ## dimensions  : 1578, 2052, 21  (nrow, ncol, nlyr)
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.09316, -41.65973, -24.00505, -9.829635  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : memory 
+    ## source      : spat_yUrliSsUqL4rBpg_72548.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
-    ## max values  :          48,          48,          48,          48,          48,          48, ...
+    ## max values  :          62,          62,          62,          62,          62,          62, ...
 
 ``` r
 plot(rs4[[1]])
@@ -182,25 +202,27 @@ plot(s4, add=T)
 Write multi-layer raster to .tif file
 
 ``` r
-writeRaster(rs4, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif", overwrite=TRUE)
+writeRaster(rs4, "data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km.tif", overwrite=TRUE)
 ```
+
+    ## |---------|---------|---------|---------|=========================================                                          
 
 Re-load and plot to check this all worked.
 
 ``` r
-new <- rast("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif")
+new <- rast("data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km.tif")
 new
 ```
 
     ## class       : SpatRaster 
-    ## dimensions  : 1578, 2052, 20  (nrow, ncol, nlyr)
+    ## dimensions  : 1578, 2052, 21  (nrow, ncol, nlyr)
     ## resolution  : 0.008983153, 0.008983153  (x, y)
     ## extent      : -60.09316, -41.65973, -24.00505, -9.829635  (xmin, xmax, ymin, ymax)
     ## coord. ref. : lon/lat WGS 84 (EPSG:4326) 
-    ## source      : mapbiomas6-cerrado-G3MGs-2001-2020-1km.tif 
+    ## source      : mapbiomas7-cerrado-G3MGs-2001-2021-1km.tif 
     ## names       : class~_2001, class~_2002, class~_2003, class~_2004, class~_2005, class~_2006, ... 
     ## min values  :           3,           3,           3,           3,           3,           3, ... 
-    ## max values  :          48,          48,          48,          48,          48,          48, ...
+    ## max values  :          62,          62,          62,          62,          62,          62, ...
 
 ``` r
 plot(new)
@@ -208,26 +230,98 @@ plot(new)
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
+``` r
+#check classes present in each year
+unique(new, incomparables = TRUE)
+```
+
+    ## [[1]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[2]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[3]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[4]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[5]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[6]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[7]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[8]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[9]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[10]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[11]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[12]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[13]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[14]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[15]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[16]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[17]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[18]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[19]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[20]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+    ## 
+    ## [[21]]
+    ##  [1]  3  4  9 11 12 15 20 21 24 25 29 30 33 39 41 46 47 48 62
+
 Now reclassify (no need for disaggregation like for CRAFTY-Brazil,
-because collection 6 include classes for soybeans etc)
+because collection 7 include classes for soybeans etc)
 
 ``` r
-classification <- read_excel(paste0("data/tables/mapbiomas6/MapBiomas_CRAFTY_classifications_v6.xlsx"), sheet = 'mb6-reclass1', range="B1:C35", col_names=T)  
+classification <- read_excel(paste0("data/tables/mapbiomas7/MapBiomas_CRAFTY_classifications_v7.xlsx"), sheet = 'mb7-reclass1', range="B1:C37", col_names=T)  
 map <- classify(new, rcl=as.matrix(classification))                 #classify
+```
+
+    ## |---------|---------|---------|---------|=========================================                                          
+
+``` r
 plot(map)
 ```
 
 ![](Cerrado-LC-Input_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
-writeRaster(map, "data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km-reclass1.tif", overwrite=T) #write!
+writeRaster(map, "data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km-reclass1.tif", overwrite=T) #write!
 ```
 
-Create raster maps of states and municipalities (for region.csv)
+    ## |---------|---------|---------|---------|=========================================                                          
 
-dimensions : 1578, 2052, 20 (nrow, ncol, nlyr) resolution : 0.008983153,
-0.008983153 (x, y) extent : -60.09316, -41.65973, -24.00505, -9.829635
-(xmin, xmax, ymin, ymax) coord. ref. : lon/lat WGS 84 (EPSG:4326)
+Create raster maps of states and municipalities (for region.csv), usnf
+dimensions etc from ‘new’ `rast`
 
 ``` r
 G3MGsadmin_latlon <- rast(
