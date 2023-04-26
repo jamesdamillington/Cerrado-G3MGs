@@ -8,8 +8,8 @@
 rm(list=ls())
 library(terra)
 
-#sim_yrs <- seq(2018, 2018, 1)   #single LC made for all these years
-sim_yrs <- c(2001, 2005, 2010)   #single LC made for all these years
+sim_yrs <- seq(2018, 2018, 1)   #single LC made for all these years
+#sim_yrs <- c(2001, 2005, 2010)   #single LC made for all these years
 reclass <- "reclass1"
 
 #target names
@@ -19,7 +19,7 @@ tnames <- c("Nature", "OAgri", "Agri", "Other", "Pasture")  #order is target id
 #if binary false, output map where target LC value is maintained, all others set to 0
 binary = T
 
-obsLC <- rast(paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-2001-2020-1km-",reclass,".tif"))  #multi-layer
+obsLC <- rast(paste0("Inputs/data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km-",reclass,".tif"))  #multi-layer
 
 for(i in seq_along(sim_yrs)){
   
@@ -38,6 +38,5 @@ for(i in seq_along(sim_yrs)){
     outputLC <- c(outputLC, LC)  #warning message will be given because outputLC is initially empty
   }
   
-  writeRaster(outputLC, paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",sim_yrs[i],"-1km-",reclass,"-singleLCs.tif"), overwrite=T)
-  
+  writeRaster(outputLC, paste0("Inputs/data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-",sim_yrs[i],"-1km-",reclass,"-singleLCs.tif"), overwrite=T)
 }
