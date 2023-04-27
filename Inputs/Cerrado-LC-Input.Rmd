@@ -109,7 +109,17 @@ plot(map)
 writeRaster(map, "data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2001-2021-1km-reclass1.tif", overwrite=T) #write!
 ```
 
-Create raster maps of states and municipalities (for region.csv), usnf dimensions etc from 'new' `rast`
+Output a single layer
+```{r}
+yr <- 2018
+plot(map[[paste0('classification_',yr)]])
+writeRaster(map[[paste0('classification_',yr)]], 
+            filename=paste0("data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-",yr,"-1km-reclass1.tif"), 
+            overwrite=T) #write!
+```
+
+
+Create raster maps of states and municipalities (for region.csv), using dimensions etc from 'new' `rast`
 
 ```{r}
 G3MGsadmin_latlon <- rast(

@@ -44,7 +44,7 @@ library(tidyverse)
 #return is a matrix. note format is row (Y) then col (X)
 extractXYZ <- function(raster, nodata = FALSE, addCellID = TRUE){
   
-  vals <- raster::extract(raster, 1:ncell(raster))   #specify raster otherwise dplyr used
+  vals <- terra::extract(raster, 1:ncell(raster))   #specify raster otherwise dplyr used
   xys <- rowColFromCell(raster,1:ncell(raster))
   combine <- cbind(xys,vals)
   
@@ -86,35 +86,32 @@ ofname <- "cerrrado2018.csv"  #output filename
 #update!  uncomment lines below as files are available to read  (and search update! below)
 
 #read required files
-munis <- rast("data/raster/socecon/G3MGsmunis_r_latlon.tif") #map of municipality IDs to be simulated
+munis <- rast("data/raster/socecon/G3MGsmunis_r_latlon.tif") #map of municipality IDs to be simulated  #from alignRasters.r
 
-#LC <- raster("Data/ObservedLCmaps/LandCover2001_PastureB_Disagg.asc")  #land cover from LandCoverMap.r (or ClassifyDisaggregateMap.r)
-#Lpr <- raster('Data/LandPrice/LandPrice_Capital_08_2001.asc')  #land prices from LandPriceMap.r
+LC <- raster("data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-2018-1km-reclass1.tif")  #from Cerrado-LC-Input.Rmd 
+Lpr <- raster('data/raster/socecon/LandProtection/LandPrice_Capital_08_2017_G3MGs.tif')  #land prices from LandPriceMap.r #from alignRasters.r
 
 #mois <- raster('Data/Moisture/MoistureCap_OctNovDecJanFebMar_S_2001.asc')   #moisture capital from moistureMap.r 
 #GS <- raster('Data/Moisture/GSCap_JanFebMarAprMayJun_S_2001.asc')   #growing season (double cropper) capital from moistureMap.r 
 
-#infra <- raster('Data/PortAccessCapital/PortAccessCap2020_2000.asc') #infrastrucutre capital from infrastructureMap.r
+infra <- raster('data/raster/socecon/Transport/PortAccessCap2017_G3MGs.tif') #from infrastructureMap.r  #from alignRasters.r
 
-#SoyProtect <- raster('Data/landProtection/All_ProtectionMap_025.asc') 
-#MaizeProtect <- raster('Data/landProtection/All_ProtectionMap_025.asc') 
-#OAgriProtect <- raster('Data/landProtection/All_ProtectionMap_025.asc') 
-#PasProtect <- raster('Data/landProtection/All_ProtectionMap_025.asc') 
+SoyProtect <- raster('data/raster/socecon/LandProtection/All_ProtectionMap_025_G3MGs.tif')   #from alignRasters.r
+MaizeProtect <- raster('data/raster/socecon/LandProtection/All_ProtectionMap_025_G3MGs.tif')   #from alignRasters.r
+OAgriProtect <- raster('data/raster/socecon/LandProtection/All_ProtectionMap_025_G3MGs.tif')   #from alignRasters.r
+PasProtect <- raster('data/raster/socecon/LandProtection/All_ProtectionMap_025_G3MGs.tif')   #from alignRasters.r
 
-#Economic <- raster('Data/AgriLocations2001.asc')
+Economic <- raster('data/raster/socecon/Economic/AgriLocations2001_G3MGs.tif')  #from alignRasters.r
 
-#OAslope <- raster('Data/OAgri-slope_2018-08-16.asc')  #other agriculture cap set to slope 
-#OAslope <- round(OAslope, 1)  #round because of long dp
+OAslope <- raster('data/raster/physical/Slope/OAgri-slope_2018-08-16_G3MGs.tif')  #other agriculture cap set to slope  #from alignRasters.r
+OAslope <- round(OAslope, 1)  #round because of long dp
 
 #NatAccess <- raster('Data/NatureAccess_2001_PastureB_Disagg_075.asc') 
 #AgriAccess <- raster('Data/AgriAccess_2001_PastureB_Disagg_005.asc') 
 #OAgriAccess <- raster('Data/OAgriAccess_2001_PastureB_Disagg_005.asc') 
 
-#agriHarvest <- read_csv("Data/muni2001_harvestAreas.csv", col_types = ("iiiid")) #from DoubleCropping.rmd
-DC <- F   #NO double cropping exists in 2001
-
-#agriHarvest <- read_csv("Data/muni2018_plantedAreas_newDC.csv", col_types = ("iiiiiidddd")) #from DoubleCropping.rmd
-#DC <- T   #double cropping exists in 2018
+agriHarvest <- read_csv("data/tables/IBGE/muni2018_plantedAreas_newDC.csv", col_types = ("iiiiiidddd")) #from DoubleCropping.rmd
+DC <- T   #double cropping exists in 2018
 
 VH <- F
 #specify csv containing spatially uniform capital values (as used in createUpdateFiles.r)
@@ -203,7 +200,7 @@ join.xy <- left_join(munis.xy, infra.xy, by = c("row", "col")) %>%
   rename("Economic" = vals) 
 
 if(VH){
-  human <- rast('Data/HumanDev/HumanCapital2001.asc') #update!
+  human <- rast('data/raster/socecon/HumanDev/HumanCapital2001_G3MGs.tif')  #from alignRasters.r
   human.xy <- readMapXYZ(human) 
   
   join.xy <- left_join(munis.xy, human.xy, by = c("row", "col")) %>%
