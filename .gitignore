@@ -9,6 +9,9 @@ Inputs/data/
 #pdfs
 *.pdf
 
+#log files
+*.log
+
 # History files
 .Rhistory
 .Rapp.history
