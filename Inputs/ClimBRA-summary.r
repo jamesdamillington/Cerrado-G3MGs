@@ -12,7 +12,7 @@ log_appender(appender_tee(logfile))
 #set model, scenarios, start, end to summarise
 model <- c("EC-EARTH3")
 scenario <- c("ssp585")
-startym <- "2018-01"
+startym <- "2020-01"
 endym <- "2020-12"
 
 for(m in model){
@@ -28,7 +28,7 @@ for(m in model){
     dat <- subset(dat,time(dat) >= ym(startym) & time(dat) < ceiling_date(ym(endym), unit="months"))
     
     log_info("starting summary (year-months sum)")
-    datym <- tapp(dat, "yearmonths", sum)
+    datym <- tapp(dat, "yearmonths", sum, na.rm=T) #na.rm to handle 29 Feb missing data
 
     #terra cannot write year-month to nc as it uses GDAL engine
     #terra also does not preserve layer names (unless they are defined as sub-datasets)
@@ -52,7 +52,7 @@ for(m in model){
       dat <- subset(dat, time(dat) >= ym(startym) & time(dat) < ceiling_date(ym(endym), unit="months"))
 
       log_info("starting summary (year-months mean)")
-      datym <- tapp(dat, "yearmonths", mean)
+      datym <- tapp(dat, "yearmonths", mean, na.rm=T)  #na.rm to handle 29 Feb missing data
 
       fpout <- paste0(path,model,"-",tas,"-",scenario,"-meanmonth-",startym,"-to-",endym,".nc")
       log_info(paste0("writing ", fpout))
