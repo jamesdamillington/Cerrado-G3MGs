@@ -85,3 +85,9 @@ soil <- rast("data/raster/physical/soilT_2018-05-01.asc")
 soil <- terra::project(soil, "EPSG:4326")
 soil <- alignRast(soil, munis.r, 2, TRUE)
 writeRaster(soil, "data/raster/physical/soilT_2018-05-01_G3MGs.tif", "overwrite"=T)
+
+#climaBRA
+pr <- rast("/home/james/Documents/data/EC-EARTH3-pr-ssp585.nc")
+pr <- terra::project(pr, "EPSG:4326")
+pr <- alignRast(pr, munis.r, 2, TRUE)
+writeRaster(pr, "/home/james/Documents/data/EC-EARTH3-pr-ssp585_G3MGs.tif", "overwrite"=T)
