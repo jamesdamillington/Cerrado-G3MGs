@@ -12,25 +12,28 @@ library(terra)
 
 #assumes focal value = 1
 buf_width <- 1000  #width of buffer in m
-#BKGs <- c(0.05,0.05,0.0)  #background valeus
-BKGs <- c(0.0,0.05,0.05,0.0,0.0)  #background valeus
+#BKGs <- c(0.05,0.05,0.0)  #background valeusBKGs <- c(0.0,0.05,0.05,0.0,0.0)  #background valeus
 #BUFs <- c(0.95,0.95,0.75) #buffer values
 BUFs <- c(0.75,0.95,0.95,0.0,0.0) #buffer values
-#LCs <- c("Agri","OAgri","Nature") #the maps to work through
+Cs <- c("Agri","OAgri","Nature") #the maps to work through
 tnames <- c("Nature", "OAgri", "Agri", "Other", "Pasture")  #order is target id
 
 targets <- c(1,2,3)
 
-years <- c(2001)
+years <- c(2018)
 reclass <- "reclass1"
 
-#yr <- 2005
+yr <- 2018
 #i<-2
 
 for(yr in years){
 
   #singleLC (multi-layer) from createSingleLCMap.r
-  lcs <- rast(paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",yr,"-1km-",reclass,"-singleLCs.tif"))  #land cover from LandCoverMap.r (or ClassifyDisaggregateMap.r)
+  #lcs <- rast(paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",yr,"-1km-",reclass,"-singleLCs.tif"))
+  lc <- rast(paste0("mapbiomas7/mapbiomas7-cerrado-G3MGs-",yr,"-1km-",reclass,"-singleLCs.tif"))
+  
+  #reproject so that spatial unit is metres
+  lcs <- project(lc, 'epsg:4087')
   
   for(i in targets){
     
@@ -70,7 +73,7 @@ for(yr in years){
     out <- lapp(s, fun=setB)
     plot(out)
 
-    writeRaster(out, paste0("data/raster/mapbiomas6/mapbiomas6-cerrado-G3MGs-",yr,"-1km-",reclass,"-",tnames[i],"Access.tif"), overwrite=T)
+    writeRaster(out, paste0("data/raster/mapbiomas7/mapbiomas7-cerrado-G3MGs-",yr,"-1km-",reclass,"-",tnames[i],"Access.tif"), overwrite=T)
     
     print(paste0("End: ",Sys.time()))
   }
