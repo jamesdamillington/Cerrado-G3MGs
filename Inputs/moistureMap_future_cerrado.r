@@ -28,6 +28,33 @@ PAW[PAW==5]<-35
 
 
 
+model <- c("EC-EARTH3")
+scenario <- c("ssp585")
+startym <- "2015-01"
+endym <- "2100-12"
+path <- "/home/james/Documents/data/"
+
+
+#sets time & names after reading monthly summarised ClimBRA data from ClimBRA-summar.r 
+setClimBRAmonth <- function(crast, startlab, endlab){
+  tc <- crast
+  se <- seq(ym(startlab),ym(endlab),by="months")
+  time(tc, tstep="yearmonths") <- se
+  names(tc) <- mapply(paste, year(se), month(se, label=T))
+  return(tc)
+}
+
+
+
+pr <- rast(paste0(path,model,"-pr-",scenario,"-totalmonth-",startym,"-to-",endym,".nc"))
+pr <- setClimBRAmonth(pr, startym, endym) 
+
+tasmin <- rast(paste0(path,model,"-tasmin-",scenario,"-meanmonth-",startym,"-to-",endym,".nc"))
+tasmin <- setClimBRAmonth(tasmin, startym, endym) 
+
+tasmax <- rast(paste0(path,model,"-tasmax-",scenario,"-meanmonth-",startym,"-to-",endym,".nc"))
+tasmax <- setClimBRAmonth(tasmax, startym, endym) 
+
 
 
 
@@ -49,8 +76,24 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, RCP)
   #read climate files for this year 
   #N hemi is 1:12
   #S hemi 7:18
+  #read climate files
   
-  #project and crop bricks to extent we want for Brazil
+  #northern hemisphere
+  if(hemi == "N") {
+    pre <- subset(pr,time(pr) >= year & time(pr) < year+1) 
+    tmn <- subset(tasmin,time(tasmin) >= year & time(tasmin) < year+1) 
+    tmx <- subset(tasmax,time(tasmax) >= year & time(tasmax) < year+1) 
+  }
+  
+  #southern hemisphere
+  if(hemi == "S") {
+    pre <- subset(pr, time(pr) >= year+0.5 & time(pr) < year+1.5)
+    tmn <- subset(tasmin, time(tasmin) >= year+0.5 & time(tasmin) < year+1.5)
+    tmx <- subset(tasmax, time(tasmax) >= year+0.5 & time(tasmax) < year+1.5)
+  }
+  
+  
+  #project and crop bricks to extent we want for Cerrado
   
   #calculate average temperature by month (brick)
   avtemp.b <- 0.36*(3*tmx.b-tmn.b)
@@ -328,64 +371,3 @@ calcMoistureMaps <- function(munis.r, PAW, year, BRA.e, hemi, season, GS, RCP)
   
 }
 
-
-
-
-
-
-pr <- rast("/home/james/Documents/data/EC-EARTH3-pr-ssp585-months.nc")
-pr
-startym <- "2018-01"
-endym <- "2020-12"
-prs <- subset(pr,terra::time(pr) > as.yearmon(startym) & terra::time(pr) <= as.yearmon(endym))
-
-tasmin <- rast("/home/james/Documents/data/EC-EARTH3-tasmin-ssp585-months.nc")
-tasmin
-
-tasmax <- rast("/home/james/Documents/data/EC-EARTH3-tasmax-ssp585-months.nc")
-plot(tasmax)
-tasmax
-
-#with zoo::yearmon
-terra::time(tasmax, tstep="yearmon") <- seq(ym("2015-01"),ym("2015-12"),by="months")
-tasmaxs <- subset(tasmax,time(tasmax) <= as.yearmon("2015-03-29"))
-
-terra::time(tasmax) <- seq(as.yearmon("2015-01"),as.yearmon("2015-12"),by=1/12)
-
-
-
-#no round-trips with lubridate
-#https://github.com/tidyverse/lubridate/issues/833
-s<-seq(ym("2015-01"),ym("2015-12"),by="months") 
-s
-#d<-decimal_date(s)
-#d
-#dd<-date_decimal(d, tz="EST")
-#dd                
-
-#with lubridate (from tidyverse) # does
-#time(tasmax, tstep="yearmonths") <- seq(ym("2015-01"),ym("2015-12"),by="months")
-#tasmaxs <- subset(tasmax,time(tasmax) < decimal_date(ymd("2015-05-01")))
-
-
-
-seq(decimal_date(ymd("2015-01-01")),decimal_date(ymd("2015-12-01")),by="months")
-
-date_decimal(2015 + (0:11)/12)
-date_decimal(time(tasmax))
-
-decimal_date(x)
-
-date <- ymd("2009-02-10")
-decimal <- decimal_date(date) # 2009.11
-date_decimal(2009.11) # "2009-02-10 UTC
-
-prt <- subset(pr,time(pr) > "2017-12-31" & time(pr) <= "2019-12-31")
-prt
-start <- Sys.time()
-prtw <- tapp(prt, "yearmonths", sum)
-print(Sys.time() - start)
-prtw
-
-prw <- subset(pr,time(pr) > "2017-12-31" & time(pr) <= "2018-12-31")
-prw
